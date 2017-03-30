@@ -167,7 +167,7 @@ You may now set quotas per worker:
 ```ruby
 client = Redis.new(semian: {
   name: "inventory",
-  quota: 0.5,
+  quota: 0.51,
   success_threshold: 2,
   error_threshold: 4,
   error_timeout: 20
@@ -176,10 +176,14 @@ client = Redis.new(semian: {
 ```
 
 Per the above example, you no longer need to care about the number of tickets.
-
 Rather, the tickets shall be computed as a proportion of the number of active workers.
 
 In this case, we'd allow 50% of the workers on a particular host to connect to this redis resource.
+So long as the workers are in their own process, they will automatically be registered. The quota will
+set the bulkhead threshold based on the number of registered workers, whenever a new worker registers.
+
+This is ideal for environments with non-uniform worker distribution, and to eliminate the need to manually
+calculate and adjust ticket counts.
 
 **Note**:
 
@@ -187,6 +191,7 @@ In this case, we'd allow 50% of the workers on a particular host to connect to t
 - Tickets available will be the ceiling of the quota ratio to the number of workers
  - So, with one worker, there will always be a minimum of 1 ticket
 - Workers in different processes will automatically unregister when the process exits.
+- If you have a small number of workers (exactly 2) it's possible that the bulkhead will be too sensitive using quotas.
 
 #### Net::HTTP
 For the `Net::HTTP` specific Semian adapter, since many external libraries may create
