@@ -18,6 +18,7 @@ distribution between machines.
 * Bug fix: Register all workers (#128)
 * Bug fix: Lazy instantiate redis clien on first I/O (#132)
 * Bug fix: New mysql error (#131)
+* Bug fix: Prevent race conditions when unregistering (#141)
 * Refactor/Feature: Break coupling between resource and circuit breaker (#123)
 * Refactor: Use generic max_sem_val (#117)
 * Refactor: Fix header syntax (#118)

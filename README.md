@@ -192,6 +192,7 @@ calculate and adjust ticket counts.
  - So, with one worker, there will always be a minimum of 1 ticket
 - Workers in different processes will automatically unregister when the process exits.
 - If you have a small number of workers (exactly 2) it's possible that the bulkhead will be too sensitive using quotas.
+- If you use a forking web server (like unicorn) you should call `Semian.unregister_all_resources` before/after forking.
 
 #### Net::HTTP
 For the `Net::HTTP` specific Semian adapter, since many external libraries may create
@@ -482,6 +483,48 @@ on a system. `cat /proc/sys/kernel/sem` will tell you.
   was 128.  Since Linux 3.19, the default value is 32,000.  On
   Linux, this limit can be read and modified via the fourth
   field of `/proc/sys/kernel/sem`.
+
+#### Bulkhead debugging on linux
+
+Note: It is often helpful to examine the actual IPC resources on the system. Semian
+provides an easy way to get the semaphore key:
+
+```
+irb> require 'semian'
+irb> puts Semian::Resource.new(:your_resource_name, tickets:1).key # do this from a dev machine
+"0x48af51ea"
+```
+
+This key can then be used to easily inspect the semaphore on any host machine:
+
+```
+ipcs -si $(ipcs -s | grep 0x48af51ea | awk '{print $2}')
+```
+
+Which should output something like:
+
+```
+
+Semaphore Array semid=5570729
+uid=8192         gid=8192        cuid=8192       cgid=8192
+mode=0660, access_perms=0660
+nsems = 4
+otime = Thu Mar 30 15:06:16 2017
+ctime = Mon Mar 13 20:25:36 2017
+semnum     value      ncount     zcount     pid
+0          1          0          0          48
+1          25         0          0          48
+2          25         0          0          27
+3          31         0          0          48
+```
+
+In the above example, we can see each of the semaphores. Looking at the enum code
+in `ext/semian/sysv_semaphores.h` we can see that:
+
+* 0: is the semian meta lock (mutex) protecting updates to the other resources. It's currently free
+* 1: is the number of available tickets - currently no tickets are in use because it's the same as 2
+* 2: is the configured (maximum) number of tickets
+* 3: is the number of registered workers (processes) that would be considered if using the quota strategy.
 
 ## Defense line
 
