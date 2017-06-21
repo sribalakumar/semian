@@ -312,7 +312,7 @@ class TestNetHTTP < Minitest::Test
     end
   end
 
-  def test_5xxs_trip_circuit_when_fatal_server_flag_enabled
+  def test_5xxs_return_fast_5xxs_when_fatal_server_flag_enabled
     options = proc do |host, port|
       {
         tickets: 2,
@@ -330,9 +330,9 @@ class TestNetHTTP < Minitest::Test
         http.raw_semian_options[:error_threshold].times do
           http.get("/500")
         end
-        assert_raises Net::CircuitOpenError do
-          http.get("/500")
-        end
+          resp = http.request_get("/500")
+          assert_equal resp.code, 503
+          assert_equal resp.msg, "Service is Unavailable"
       end
     end
   end

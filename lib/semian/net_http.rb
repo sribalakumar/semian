@@ -48,6 +48,9 @@ module Semian
       base.send(:alias_method, :raw_transport_request, :transport_request)
       base.send(:remove_method, :transport_request)
 
+      base.send(:alias_method, :raw_request, :request)
+      base.send(:remove_method, :request)
+
       base.send(:alias_method, :raw_connect, :connect)
       base.send(:remove_method, :connect)
     end
@@ -90,6 +93,17 @@ module Semian
     def connect
       return raw_connect if disabled?
       acquire_semian_resource(adapter: :http, scope: :connection) { raw_connect }
+    end
+
+
+    def request(req, body = nil, &block)
+      result = raw_request(req,body,&block)
+    rescue Semian::NetHTTP::CircuitOpenError => error
+        if raw_semian_options.fetch(:open_circuit_server_errors, false)
+          Net::HTTPResponse.new(1.0, 503, "Service is Unavailable")
+        else
+          raise
+        end
     end
 
     def transport_request(req, &block)
