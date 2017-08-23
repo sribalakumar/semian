@@ -115,6 +115,7 @@ module Semian
   attr_accessor :logger
 
   class LoggerPatch
+
     def info(str)
       log_to_new_relic(str)
     end
@@ -135,7 +136,7 @@ module Semian
   # self.logger = Logger.new(STDERR)
   #self.logger = Rails.logger
 
-  self.logger = new LoggerPatch()
+  self.logger = LoggerPatch.new
 
   # Registers a resource.
   #
