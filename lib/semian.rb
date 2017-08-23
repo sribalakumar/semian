@@ -123,13 +123,15 @@ module Semian
     def log_to_new_relic str
       error = nil
       if str == "Circuit is Open"
-        error = OpenCircuitError
-        str = str + "#{Time.now}"
-      else
-        error = StateTransitionError
+        error = OpenCircuitError.new
+        str = str + " #{Time.now}"
+      else if str.include? "State transition from"
+        error = StateTransitionError.new
       end
       Rails.logger.info(str)
-      NewRelic::Agent.notice_error(error, {:message => "#{str}"})
+      if error
+        NewRelic::Agent.notice_error(error, {:message => "#{str}"})
+      end
     end
   end
 
