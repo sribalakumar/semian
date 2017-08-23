@@ -88,6 +88,7 @@ module Semian
   TimeoutError = Class.new(BaseError)
   InternalError = Class.new(BaseError)
   OpenCircuitError = Class.new(BaseError)
+  StateTransitionError = Class.new(BaseError)
 
   def issue_disabled_semaphores_warning
     return if defined?(@warning_issued)
@@ -113,7 +114,23 @@ module Semian
 
   attr_accessor :logger
 
-  self.logger = Logger.new(STDERR)
+  # self.logger = Logger.new(STDERR)
+  #self.logger = Rails.logger
+
+  self.logger = { "info" => log_to_new_relic(str) }
+
+  def log_to_new_relic str
+    error = nil
+    if str == "Circuit is Open"
+      error = OpenCircuitError
+      str = str + "#{Time.now}"
+    else
+      error = StateTransitionError
+    end
+    # log to sumologic as well.
+    Rails.logger.info(str)
+    NewRelic::Agent.notice_error(error, {:message => "#{str}"})
+  end
 
   # Registers a resource.
   #
