@@ -117,7 +117,7 @@ module Semian
   # self.logger = Logger.new(STDERR)
   #self.logger = Rails.logger
 
-  self.logger = { "info" => log_to_new_relic(str) }
+  self.logger = { "info" => log_to_new_relic }
 
   def log_to_new_relic str
     error = nil
