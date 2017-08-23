@@ -125,7 +125,7 @@ module Semian
       if str == "Circuit is Open"
         error = OpenCircuitError.new
         str = str + " #{Time.now}"
-      else if str.include? "State transition from"
+      elsif str.include? "State transition from"
         error = StateTransitionError.new
       end
       Rails.logger.info(str)
