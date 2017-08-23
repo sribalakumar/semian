@@ -21,7 +21,7 @@ module Semian
     def acquire
       half_open if open? && error_timeout_expired?
 
-      # raise OpenCircuitError unless request_allowed?
+      raise OpenCircuitError unless request_allowed?
       # unless request_allowed?
       #   Semian.logger.info("Throwing Open Circuit Error")
       #   #instrumentable lib won't work, consider it later.
