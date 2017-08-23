@@ -114,23 +114,28 @@ module Semian
 
   attr_accessor :logger
 
+  class LoggerPatch
+    def info(str)
+      log_to_new_relic(str)
+    end
+
+    def log_to_new_relic str
+      error = nil
+      if str == "Circuit is Open"
+        error = OpenCircuitError
+        str = str + "#{Time.now}"
+      else
+        error = StateTransitionError
+      end
+      Rails.logger.info(str)
+      NewRelic::Agent.notice_error(error, {:message => "#{str}"})
+    end
+  end
+
   # self.logger = Logger.new(STDERR)
   #self.logger = Rails.logger
 
-  self.logger = { "info" => log_to_new_relic }
-
-  def log_to_new_relic str
-    error = nil
-    if str == "Circuit is Open"
-      error = OpenCircuitError
-      str = str + "#{Time.now}"
-    else
-      error = StateTransitionError
-    end
-    # log to sumologic as well.
-    Rails.logger.info(str)
-    NewRelic::Agent.notice_error(error, {:message => "#{str}"})
-  end
+  self.logger = new LoggerPatch()
 
   # Registers a resource.
   #
