@@ -23,7 +23,7 @@ module Semian
 
       # raise OpenCircuitError unless request_allowed?
       unless request_allowed?
-        Semian.logger.info("Circuit is Open")
+        Semian.logger.info("Throwing Open Circuit Error")
         #instrumentable lib won't work, consider it later.
       end
 
@@ -117,7 +117,7 @@ module Semian
       str = "[#{self.class.name}] State transition from #{@state.value} to #{new_state}."
       str << " success_count=#{@successes.value} error_count=#{@errors.size}"
       str << " success_count_threshold=#{@success_count_threshold} error_count_threshold=#{@error_count_threshold}"
-      str << " error_timeout=#{@error_timeout} error_last_at=\"#{@errors.last}\""
+      str << " error_timeout=#{@error_timeout} error_last_at=\"#{Time.at(@errors.last)}\""
       Semian.logger.info(str)
     end
   end

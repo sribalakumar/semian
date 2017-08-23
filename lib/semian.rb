@@ -122,7 +122,7 @@ module Semian
 
     def log_to_new_relic str
       error = nil
-      if str == "Circuit is Open"
+      if str == "Throwing Open Circuit Error"
         error = OpenCircuitError.new
         str = str + " #{Time.now}"
       elsif str.include? "State transition from"
