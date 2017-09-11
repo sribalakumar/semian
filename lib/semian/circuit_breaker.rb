@@ -47,6 +47,8 @@ module Semian
     end
 
     def mark_failed(_error)
+      Rails.logger.info("****** Marking Resource Failure in Semian ******")
+      Rails.logger.info("#{_error.class.name} : #{_error.message}")
       push_time(@errors)
       if closed?
         open if error_threshold_reached?
