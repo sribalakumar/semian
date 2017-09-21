@@ -76,6 +76,7 @@ module Semian
       end
       result
     rescue ResourceBusyError, CircuitOpenError, PingFailure
+      Rails.logger.info("%"*30 + "Ping failure")
       false
     end
 
