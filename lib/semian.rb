@@ -13,6 +13,7 @@ require 'semian/unprotected_resource'
 require 'semian/simple_sliding_window'
 require 'semian/simple_integer'
 require 'semian/simple_state'
+require 'semian/simple_error'
 
 #
 # === Overview

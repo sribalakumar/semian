@@ -13,7 +13,7 @@ module Semian
       @error_timeout = error_timeout
       @exceptions = exceptions
 
-      @errors = implementation::SlidingWindow.new(max_size: @error_count_threshold)
+      @errors = implementation::Error.new
       @successes = implementation::Integer.new
       @state = implementation::State.new
     end
@@ -49,7 +49,8 @@ module Semian
     def mark_failed(_error)
       Rails.logger.info("****** Marking Resource Failure in Semian ******")
       Rails.logger.info("#{_error.class.name} : #{_error.message}")
-      push_time(@errors)
+      @errors.increment
+      set_last_error_time
       if closed?
         open if error_threshold_reached?
       elsif half_open?
@@ -58,13 +59,14 @@ module Semian
     end
 
     def mark_success
+      @errors.reset
       return unless half_open?
       @successes.increment
       close if success_threshold_reached?
     end
 
     def reset
-      @errors.clear
+      @errors.reset
       @successes.reset
       close
     end
@@ -80,17 +82,20 @@ module Semian
     def close
       log_state_transition(:closed)
       @state.close
-      @errors.clear
+      @errors.reset
+      @successes.reset # Bug fix for log_state_transition.
     end
 
     def open
       log_state_transition(:open)
       @state.open
+      #@errors.reset # Not needed because the next state it going to be half_open and reset there.
     end
 
     def half_open
       log_state_transition(:half_open)
       @state.half_open
+      @errors.reset
       @successes.reset
     end
 
@@ -99,27 +104,25 @@ module Semian
     end
 
     def error_threshold_reached?
-      @errors.size == @error_count_threshold
+      @errors.value >= @error_count_threshold
     end
 
     def error_timeout_expired?
-      last_error_time = @errors.last
-      return false unless last_error_time
-      Time.at(last_error_time) + @error_timeout < Time.now
+      return false unless @errors.last_error_time
+      Time.at(@errors.last_error_time) + @error_timeout < Time.now
     end
 
-    def push_time(window, time: Time.now)
-      window.reject! { |err_time| err_time + @error_timeout < time.to_i }
-      window << time.to_i
+    def set_last_error_time(time: Time.now)
+      @errors.last_error_at(time.to_i)
     end
 
     def log_state_transition(new_state)
       return if @state.nil? || new_state == @state.value
 
       str = "[#{self.class.name}] State transition from #{@state.value} to #{new_state}."
-      str << " success_count=#{@successes.value} error_count=#{@errors.size}"
+      str << " success_count=#{@successes.value} error_count=#{@errors.value}"
       str << " success_count_threshold=#{@success_count_threshold} error_count_threshold=#{@error_count_threshold}"
-      str << " error_timeout=#{@error_timeout} error_last_at=\"#{Time.at(@errors.last)}\""
+      str << " error_timeout=#{@error_timeout} error_last_at=\"#{@errors.last_error_time ? Time.at(@errors.last_error_time) : ''}\""
       Semian.logger.info(str)
     end
   end
