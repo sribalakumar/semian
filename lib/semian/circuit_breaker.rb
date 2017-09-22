@@ -59,8 +59,8 @@ module Semian
     end
 
     def mark_success
-      @errors.reset
       return unless half_open?
+      @errors.reset
       @successes.increment
       close if success_threshold_reached?
     end
