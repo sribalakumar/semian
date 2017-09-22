@@ -24,7 +24,7 @@ module Semian
     # mark_success should only be called during half_open state.
 
     def acquire
-      half_open if open && error_timeout_expired?
+      half_open if open? && error_timeout_expired?
 
       unless request_allowed?
         if @dryrun
