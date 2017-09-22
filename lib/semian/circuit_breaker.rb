@@ -6,35 +6,42 @@ module Semian
 
     attr_reader :name
 
-    def initialize(name, exceptions:, success_threshold:, error_threshold:, error_timeout:, implementation:)
+    def initialize(name, exceptions:, success_threshold:, error_threshold:, error_timeout:, implementation:, dryrun:)
       @name = name.to_sym
       @success_count_threshold = success_threshold
       @error_count_threshold = error_threshold
       @error_timeout = error_timeout
       @exceptions = exceptions
+      @dryrun = dryrun
 
       @errors = implementation::Error.new
       @successes = implementation::Integer.new
       @state = implementation::State.new
     end
 
-    def acquire
-      half_open if open? && error_timeout_expired?
+    # Conditions to check with dryrun
+    # In open state should not calle mark_failed, mark_success.
+    # mark_success should only be called during half_open state.
 
-      raise OpenCircuitError unless request_allowed?
-      # unless request_allowed?
-      #   Semian.logger.info("Throwing Open Circuit Error")
-      #   #instrumentable lib won't work, consider it later.
-      # end
+    def acquire
+      half_open if open && error_timeout_expired?
+
+      unless request_allowed?
+        if @dryrun
+          Semian.logger.info("Throwing Open Circuit Error")
+        else
+          raise OpenCircuitError
+        end
+      end
 
       result = nil
       begin
         result = yield
       rescue *@exceptions => error
-        mark_failed(error)
+        mark_failed(error) unless open?
         raise error
       else
-        mark_success
+        mark_success unless open?
       end
       result
     end

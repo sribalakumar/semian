@@ -108,7 +108,7 @@ module Semian
       super
     rescue ::Mysql2::Error => error
       if error.message =~ CONNECTION_ERROR || error.message =~ TIMEOUT_ERROR || error.is_a?(PingFailure)
-        semian_resource.mark_failed(error)
+        semian_resource.mark_failed(error) unless semian_resource.open? #check to avoid the open state marking it failed during dryrun.
         error.semian_identifier = semian_identifier
       end
       raise
