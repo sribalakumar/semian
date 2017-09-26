@@ -271,7 +271,7 @@ module Semian
       error_timeout: options[:error_timeout],
       exceptions: Array(exceptions) + [::Semian::BaseError],
       implementation: implementation,
-      dryrun: options[:dryrun]
+      dryrun: options[:dryrun].nil? ? true : options[:dryrun]
     )
   end
 
