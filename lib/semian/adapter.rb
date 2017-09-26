@@ -44,7 +44,7 @@ module Semian
     def semian_options
       return @semian_options if defined? @semian_options
       options = raw_semian_options
-      @semian_options = options && options.map { |k, v| [k.to_sym, v] }.to_h && options[:enabled]
+      @semian_options = options && options.map { |k, v| [k.to_sym, v] }.to_h && options["enable"]
     end
 
     def raw_semian_options
