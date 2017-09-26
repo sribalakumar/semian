@@ -123,21 +123,21 @@ module Semian
 
     def log_to_new_relic str
       error = nil
+
       if str == "Throwing Open Circuit Error"
         error = OpenCircuitError.new
         str = str + " #{Time.now}"
       elsif str.include? "State transition from"
         error = StateTransitionError.new
       end
+
       Rails.logger.info(str)
+
       if error
         NewRelic::Agent.notice_error(error, {:message => "#{str}"})
       end
     end
   end
-
-  # self.logger = Logger.new(STDERR)
-  #self.logger = Rails.logger
 
   self.logger = LoggerPatch.new
 

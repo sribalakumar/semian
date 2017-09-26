@@ -54,8 +54,7 @@ module Semian
     end
 
     def mark_failed(_error)
-      Rails.logger.info("****** Marking Resource Failure in Semian ******")
-      Rails.logger.info("#{_error.class.name} : #{_error.message}")
+      Semian.logger.info("Marking resource failure in Semian - #{_error.class.name} : #{_error.message}")
       @errors.increment
       set_last_error_time
       if closed?
@@ -87,20 +86,20 @@ module Semian
     private
 
     def close
-      log_state_transition(:closed)
+      log_state_transition(:closed, Time.now)
       @state.close
       @errors.reset
       @successes.reset # Bug fix for log_state_transition.
     end
 
     def open
-      log_state_transition(:open)
+      log_state_transition(:open, Time.now)
       @state.open
       #@errors.reset # Not needed because the next state it going to be half_open and reset there.
     end
 
     def half_open
-      log_state_transition(:half_open)
+      log_state_transition(:half_open, Time.now)
       @state.half_open
       @errors.reset
       @successes.reset
@@ -123,10 +122,10 @@ module Semian
       @errors.last_error_at(time.to_i)
     end
 
-    def log_state_transition(new_state)
+    def log_state_transition(new_state, occur_time)
       return if @state.nil? || new_state == @state.value
 
-      str = "[#{self.class.name}] State transition from #{@state.value} to #{new_state}."
+      str = "[#{self.class.name}] State transition from #{@state.value} to #{new_state} at #{occur_time}."
       str << " success_count=#{@successes.value} error_count=#{@errors.value}"
       str << " success_count_threshold=#{@success_count_threshold} error_count_threshold=#{@error_count_threshold}"
       str << " error_timeout=#{@error_timeout} error_last_at=\"#{@errors.last_error_time ? Time.at(@errors.last_error_time) : ''}\""
